@@ -1,33 +1,72 @@
-amphibians <- read.csv(file = 'C:/Users/Liam/Desktop/d. Fall 2020/STAT 512/Project/amphibians.csv',sep = ';', skip = 1)
+#Import Data
+waredata = read.table("C:/Users/Liam/Desktop/d. Fall 2020/STAT 512/Project/machine.data", sep=",")
+colnames(waredata) [1:10] <- c('Vendor','Model','MYCT','MMIN','MMAX','CACH','CHMIN','CHMAX','PRP','ERP')
 
-#Assumption: there is no given number of frogs per area, only the presence of frogs. We assume more types of frogs present in an area 
-  #corresponds to more frogs in an area overall.
+pairs(waredata[3:10])
+lam_est = invTranEstimate(waredata$MYCT, waredata$ERP)
+plot(waredata$MYCT^-1.115372,waredata$ERP)
 
-#Comment: The larger the number of reservoirs, the more likely it is that some of them will be suitable for amphibian breeding.
-#Comment: The vegetation in the reservoir favors amphibians, facilitates breeding, and allows the larvae to feed and give shelter. 
-  #However, excess vegetation can lead to the overgrowth of the pond and water shortages. 
+#Data Processing
+m1 = lm(ERP ~ MYCT + I(MYCT^-1.115372),data=waredata)#,weights = 1/MYCT^-1.115372)
+yhat = predict(m1)
 
-#Define short names
-#Frogs
-  gf  = amphibians$Green.frogs
-  gcn = amphibians$Great.crested.newt
-  bf  = amphibians$Brown.frogs
-  ct  = amphibians$Common.toad
-  fbt = amphibians$Fire.bellied.toad
-  tf  = amphibians$Tree.frog
-  cn  = amphibians$Common.newt
-  amphibians$Total.Frogs = gf + gcn + bf + ct + fbt + tf + cn
-  tot = amphibian$Total.Frogs
-#Attributes
-  veg = amphibians$VR
+plot(waredata$MYCT, yhat)
+points(waredata$MYCT,waredata$ERP,col='red')
 
-#Vegetation amount vs Suitability
-  t0 = subset(amphibians,amphibians$VR==0)
-  t1 = subset(amphibians,amphibians$VR==1)
-  t2 = subset(amphibians,amphibians$VR==2)
-  t3 = subset(amphibians,amphibians$VR==3)
-  t4 = subset(amphibians,amphibians$VR==4)
-  y <- c(sum(t0$Green.frogs), sum(t1$Green.frogs), sum(t2$Green.frogs), sum(t3$Green.frogs), sum(t4$Green.frogs))
-  
-plot(c(0,1,2,3,4), y)
-points(c(0,1,2,3,4),c(sum(t0$Brown.frogs), sum(t1$Brown.frogs), sum(t2$Brown.frogs), sum(t3$Brown.frogs), sum(t4$Brown.frogs)))
+m2 = lm(ERP ~ MYCT + I(MYCT^-1.115372) + MMIN,data=waredata)
+summary(m2)
+
+m3 = lm(ERP ~ MYCT + I(MYCT^-1.115372) + MMIN + MMAX,data=waredata)
+summary(m3)
+
+m4 = lm(ERP ~ MYCT + I(MYCT^-1.115372) + MMIN + MMAX + MMIN:MMAX,data=waredata)
+summary(m4)
+
+m5 = lm(ERP ~ MYCT + I(MYCT^-1.115372) + MMIN:MMAX,data=waredata)
+summary(m5)
+
+anova(m5, m4)
+
+m6 = lm(ERP ~ MYCT + I(MYCT^-1.115372) + MMIN + MMAX + MMIN:MMAX + Vendor,data=waredata)
+summary(m6)
+
+m7 = lm(ERP ~ MYCT + I(MYCT^-1.115372) + MMIN + MMAX + CACH + CHMIN + CHMAX,data=waredata)
+summary(m7)
+
+#Best Model Candidate
+m72 = lm(ERP ~ MYCT + I(MYCT^-1.115372) + MMIN + MMAX + CACH + CHMIN + CHMAX + MMIN:MMAX + CHMIN:CHMAX,data=waredata)
+summary(m72)
+
+#Best Model Candidate, possible overfitting: Don't include PRP because it is not an actual performance characteristic
+m73 = lm(ERP ~ MYCT + I(MYCT^-1.115372) + MMIN + MMAX + CACH + CHMIN + CHMAX + PRP + MMIN:MMAX + CHMIN:CHMAX,data=waredata)
+summary(m73)
+
+#Best Model Candidate, without PRP, MYCT, or Intercept.
+m74 = lm(ERP ~ 0 + MMIN + MMAX + CACH + CHMIN + CHMAX + MMIN:MMAX + CHMIN:CHMAX,data=waredata)
+summary(m74)
+
+anova(m74,m73)
+
+m8 = lm(ERP ~ MYCT + MMIN + MMAX + CACH + CHMAX,data=waredata)
+summary(m8)
+
+anova(m1,m8,m7)
+#Fitted MYCT and CHMIN do not seem to be as statistically significant as the other variables we keep for m8.
+
+m9 = lm(ERP~PRP,data=waredata)
+summary(m9)
+anova(m9,m8)
+
+m10 = lm(PRP~ERP,data=waredata)
+m11 = lm(PRP~MYCT,data=waredata)
+summary(m10)
+summary(m11)
+
+
+anova(m1,m2,m3,m4)
+
+
+
+m3 = lm(ERP ~ MYCT+CACH + MMIN+MMAX, data=waredata)
+m4 = lm(ERP ~ MYCT+CACH + MMIN+MMAX + MMIN:MMAX, data=waredata)
+anova(m1,m2,m3,m4)
