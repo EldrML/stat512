@@ -73,5 +73,5 @@ bic_comp    = data.frame(BIC(m_base),
 
 #Selecting the best model, performing ANOVA, and getting a summary.
 m_best = m_ex8 #Choosing the simplest model because the difference between it and the more complex models in terms of R^2 is negligible.
-anova(m_base, m_best)
+anova(m_best)
 summary(m_best)
